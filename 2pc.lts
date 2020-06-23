@@ -1,0 +1,104 @@
+const UserNode = 2
+range UserNodeID = 1 .. UserNode
+
+const UserUnSent = 0
+const UserUnRecv = 1
+const UserRecv = 2
+range UserStatus = UserUnSent .. UserRecv
+
+const DecisionYes = 0
+const DecisionNo = 1
+range Decisions = DecisionYes .. DecisionNo
+
+//=============================
+// SERVER PROCESS (COORDINATOR)
+//=============================
+
+SERVER = SERVER_WORKING,
+SERVER_WORKING = (
+    commit_request -> GATHER_RESPONSE[UserUnSent][UserUnSent]
+),
+
+GATHER_RESPONSE[a:UserStatus][b:UserStatus] = (
+    when(a == UserUnSent)
+        sent_a -> GATHER_RESPONSE[UserUnRecv][b]
+    |
+    when(b == UserUnSent)
+        sent_b -> GATHER_RESPONSE[a][UserUnRecv]
+    |
+    when(a == UserUnRecv)
+        recv_a -> GATHER_RESPONSE[UserRecv][b]
+        |
+        lost_a -> SERVER
+    |
+    when(b == UserUnRecv)
+        recv_b -> GATHER_RESPONSE[a][UserRecv]
+        |
+        lost_b -> SERVER
+    |
+    when(a == UserRecv && b == UserRecv)
+        get_decision_result -> DECISION_PROCESS[a][b]
+    
+),
+
+DECISION_PROCESS[a:UserStatus][b:UserStatus] = (
+    back -> SERVER
+).
+
+//=============================
+// NETWORK PROCESS 
+//=============================
+
+const PktEmpty = 0
+const PktFromServer = 1
+const PktFromUser = 2
+const PktLost = 3
+range PktStatus = PktEmpty .. PktLost
+
+NETWORK = NETWORK_WORKING[PktEmpty][PktEmpty],
+NETWORK_WORKING[a:PktStatus][b:PktStatus] = (
+    when(a == PktEmpty)
+        get_server_a -> NETWORK_WORKING[PktFromServer][b]
+        |
+        get_user_a -> NETWORK_WORKING[PktFromUser][b]
+    |
+    when(b == PktEmpty)
+        get_server_b -> NETWORK_WORKING[a][PktFromServer]
+        |
+        get_user_b -> NETWORK_WORKING[a][PktFromUser]
+    |
+    when(a == PktFromServer)
+        put_user_a -> NETWORK_WORKING[PktEmpty][b]
+    |
+    when(b == PktFromServer)
+        put_user_b -> NETWORK_WORKING[a][PktEmpty]
+    |
+    when(a == PktFromUser)
+        put_server_a -> NETWORK_WORKING[PktEmpty][b]
+    |
+    when(b == PktFromUser)
+        put_server_b -> NETWORK_WORKING[a][PktEmpty]
+).
+
+// NETWORK = (
+//     get_server_a -> put_user_a -> NETWORK 
+// |
+//     get_server_b -> put_user_b -> NETWORK 
+// | 
+//     get_user_a -> put_server_a -> NETWORK 
+// | 
+//     get_user_b -> put_server_b -> NETWORK
+// ).
+
+//=============================
+// USER PROCESS
+//=============================
+
+USER_A = (recv_msg_a -> mk_da -> put_a -> USER_A).
+USER_B = (recv_msg_b -> mk_db -> put_b -> USER_B).
+
+||TPC = (SERVER||NETWORK||USER_A||USER_B)
+/{sent_a/get_server_a, sent_b/get_server_b, 
+recv_a/put_server_a, recv_b/put_server_b, 
+put_user_a/recv_msg_a, put_user_b/recv_msg_b, 
+get_user_a/put_a, get_user_b/put_b}.
