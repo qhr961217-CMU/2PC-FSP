@@ -1,1 +1,2 @@
-# 2PC-FSP
+# Two-Phase Commit protocol analysis with FSP
+
