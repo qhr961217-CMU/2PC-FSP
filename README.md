@@ -8,6 +8,8 @@ Two-Phase Commit protocol is a atomic distributed commitment protocol aims to co
 
 The Two-Phase Commit protocol can be described using state machines, known as Labelled Transition Systems (LTS). These are described textually as finite state processes (FSP) and displayed and analysed by the Labeled Transition Systems Analyzer (LTSA) tool.
 
+LTSA download: https://www.doc.ic.ac.uk/ltsa/
+
 ## Model Assumptions
 
 1. In the two phase commit protocol, whenever the server start a new commit process, it will send requests for all the involved users. In real world, the involved users might be only a part of all potential users. In this model, I assume all users in models are involved users, which means once the server start a new commit, all users in our model will receive the requests.
@@ -26,7 +28,10 @@ The Two-Phase Commit protocol can be described using state machines, known as La
 
     d. *Decision acknowledge message*: Same as decision message lost, the server will resend the message when timeout happens until it receives acknowledge message from all users.
 
-5. Both server and users might be failed and failure recovery mechanism should deal with commit process recovery. In the model, I assume that all completed actions would be recorded in log files atomically. Therefore, both server and users could be restored by their records in log files.
+5. The commitment decision result will be made if and only if the server has received all the voting messages even if the user message timeout.
+
+
+6. Both server and users might be failed and failure recovery mechanism should deal with commit process recovery. In the model, I assume that all completed actions would be recorded in log files atomically. Therefore, both server and users could be restored by their records in log files.
 
 ## *Safety* & *liveness* Properties
 
