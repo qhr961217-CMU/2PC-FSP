@@ -28,3 +28,17 @@ The Two-Phase Commit protocol can be described using state machines, known as La
 
 5. Both server and users might be failed and failure recovery mechanism should deal with commit process recovery. In the model, I assume that all completed actions would be recorded in log files atomically. Therefore, both server and users could be restored by their records in log files.
 
+## *Safety* & *liveness* Properties
+
+### *Safety*
+
+1. If all the users voting "Yes" on this commit, the server will never return "abort" decision result.
+
+2. If at least one user voting "No" on this commit, the server will never return "commit" decision result.
+
+
+### *Liveness* 
+
+1. If all the users voting "Yes" on this commit, the server will eventually return "commit" decision result.
+
+2. If at least one user voting "No" on this commit, the server will eventually return "abort" decision result.
