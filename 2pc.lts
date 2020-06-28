@@ -44,6 +44,9 @@ GATHER_RESPONSE[a:UserStatus][b:UserStatus] = (
         |
         when(a == UserUnRecv)
             server_recv_voting_no_from_a -> GATHER_RESPONSE[UserRecvNo][b]
+        |
+        when(a == UserUnRecv)
+            server_commit_message_a_timeout -> GATHER_RESPONSE[UserRecvNo][b]
     |
     // Wait for user b sent voting message to the server
     when(b == UserUnRecv)
@@ -51,6 +54,9 @@ GATHER_RESPONSE[a:UserStatus][b:UserStatus] = (
         |
         when(b == UserUnRecv)
             server_recv_voting_no_from_b -> GATHER_RESPONSE[a][UserRecvNo]
+        |
+        when(b == UserUnRecv)
+            server_commit_message_b_timeout -> GATHER_RESPONSE[a][UserRecvNo]
     |
     // If both voting messages are received
     // Jump to the process that makes the final decision
@@ -86,9 +92,13 @@ SEND_RESULTS[s:DecisionResults][a:UserStatus][b:UserStatus] = (
     |
     when(a == UserUnRecv)
         server_recv_ack_from_a -> SEND_RESULTS[s][UserRecvYes][b]
+        |
+        server_decision_result_a_timeout -> SEND_RESULTS[s][UserUnSent][b]
     |
     when(b == UserUnRecv)
         server_recv_ack_from_b -> SEND_RESULTS[s][a][UserRecvYes]
+        |
+        server_decision_result_b_timeout -> SEND_RESULTS[s][a][UserUnSent]
     |
     when(a == UserRecvYes && b == UserRecvYes)
         server_back_to_init_state -> SERVER
@@ -105,57 +115,94 @@ const PktFromServer = 1
 const PktFromUser = 2
 const PktFromUserYes = 3
 const PktFromUserNo = 4
-const PktLost = 5
-const DecisionYesFromServer = 6
-const DecisionNoFromServer = 7
-const AckFromUser = 8
+const PktLostCommit = 5
+const PktLostDecision = 6
+const DecisionYesFromServer = 7
+const DecisionNoFromServer = 8
+const AckFromUser = 9
 range PktStatus = PktEmpty .. AckFromUser
 
 // A local process in network
 // Handle with concurrent message delivery 
 NETWORK = NETWORK_WORKING[PktEmpty][PktEmpty],
 NETWORK_WORKING[a:PktStatus][b:PktStatus] = (
+    when(a == PktLostCommit) 
+        server_commit_message_a_timeout -> NETWORK_WORKING[PktEmpty][b]
+    |
+    when(a == PktLostDecision)
+        server_decision_result_a_timeout -> NETWORK_WORKING[PktEmpty][b]
+    |
+    when(b == PktLostCommit)
+        server_commit_message_b_timeout -> NETWORK_WORKING[a][PktEmpty]
+    |
+    when(b == PktLostDecision)
+        server_decision_result_b_timeout -> NETWORK_WORKING[a][PktEmpty]
+    |
     // When neither server nor user a send message to each other
     when(a == PktEmpty)
         // Server send commit message to user a
-            get_commit_message_a -> NETWORK_WORKING[PktFromServer][b]
+        get_commit_message_a -> NETWORK_WORKING[PktFromServer][b]
         |
-        when(a == PktEmpty)
+        get_commit_message_a -> NETWORK_WORKING[PktLostCommit][b]
+        |
+    when(a == PktEmpty)
         // User a send voting message to server
-            get_voting_message_yes_a -> NETWORK_WORKING[PktFromUserYes][b]
+        get_voting_message_yes_a -> NETWORK_WORKING[PktFromUserYes][b]
         |
-        when(a == PktEmpty)
-            get_voting_message_no_a -> NETWORK_WORKING[PktFromUserNo][b]
+        get_voting_message_yes_a -> NETWORK_WORKING[PktLostCommit][b]
         |
-        when(a == PktEmpty)
-            get_decision_message_yes_a -> NETWORK_WORKING[DecisionYesFromServer][b]
+    when(a == PktEmpty)
+        get_voting_message_no_a -> NETWORK_WORKING[PktFromUserNo][b]
         |
-        when(a == PktEmpty)
-            get_decision_message_no_a -> NETWORK_WORKING[DecisionNoFromServer][b]
+        get_voting_message_no_a -> NETWORK_WORKING[PktLostCommit][b]
         |
-        when(a == PktEmpty)
-            get_ack_message_a ->NETWORK_WORKING[AckFromUser][b]
+    when(a == PktEmpty)
+        get_decision_result_yes_a -> NETWORK_WORKING[DecisionYesFromServer][b]
+        |
+        get_decision_result_yes_a -> NETWORK_WORKING[PktLostDecision][b]
+    |
+    when(a == PktEmpty)
+        get_decision_result_no_a -> NETWORK_WORKING[DecisionNoFromServer][b]
+        |
+        get_decision_result_no_a -> NETWORK_WORKING[PktLostDecision][b]
+    |
+    when(a == PktEmpty)
+        get_ack_message_a ->NETWORK_WORKING[AckFromUser][b]
+        |
+        get_ack_message_a -> NETWORK_WORKING[PktLostDecision][b]
     |
     // When neither server nor user b send message to each other
     when(b == PktEmpty)
-        // Server send commit message to user b
-            get_commit_message_b -> NETWORK_WORKING[a][PktFromServer]
+    // Server send commit message to user b
+        get_commit_message_b -> NETWORK_WORKING[a][PktFromServer]
         |
-        when(b == PktEmpty)
-        // User b send voting message to server
-            get_voting_message_yes_b -> NETWORK_WORKING[a][PktFromUserYes]
+        get_commit_message_b -> NETWORK_WORKING[a][PktLostCommit]
+    |
+    when(b == PktEmpty)
+    // User b send voting message to server
+        get_voting_message_yes_b -> NETWORK_WORKING[a][PktFromUserYes]
         |
-        when(b == PktEmpty)
-            get_voting_message_no_b -> NETWORK_WORKING[a][PktFromUserNo]
+        get_voting_message_yes_b -> NETWORK_WORKING[a][PktLostCommit]
+    |
+    when(b == PktEmpty)
+        get_voting_message_no_b -> NETWORK_WORKING[a][PktFromUserNo]
         |
-        when(b == PktEmpty)
-            get_decision_message_yes_b -> NETWORK_WORKING[a][DecisionYesFromServer]
+        get_voting_message_no_b -> NETWORK_WORKING[a][PktLostCommit]
+    |
+    when(b == PktEmpty)
+        get_decision_result_yes_b -> NETWORK_WORKING[a][DecisionYesFromServer]
         |
-        when(b == PktEmpty)
-            get_decision_message_no_b -> NETWORK_WORKING[a][DecisionNoFromServer]
+        get_decision_result_yes_b -> NETWORK_WORKING[a][PktLostDecision]
+    |
+    when(b == PktEmpty)
+        get_decision_result_no_b -> NETWORK_WORKING[a][DecisionNoFromServer]
         |
-        when(b == PktEmpty)
-            get_ack_message_b -> NETWORK_WORKING[a][AckFromUser]
+        get_decision_result_no_b -> NETWORK_WORKING[a][PktLostDecision]
+    |
+    when(b == PktEmpty)
+        get_ack_message_b -> NETWORK_WORKING[a][AckFromUser]
+        |
+        get_ack_message_b -> NETWORK_WORKING[a][PktLostDecision]
     |
     // When server send a commit message to user a
     when(a == PktFromServer)
@@ -180,16 +227,16 @@ NETWORK_WORKING[a:PktStatus][b:PktStatus] = (
         put_voting_message_no_b -> NETWORK_WORKING[a][PktEmpty]
     |
     when(a == DecisionYesFromServer)
-        put_decision_message_yes_a -> NETWORK_WORKING[PktEmpty][b]
+        put_decision_result_yes_a -> NETWORK_WORKING[PktEmpty][b]
     |
     when(a == DecisionNoFromServer)
-        put_decision_message_no_a -> NETWORK_WORKING[PktEmpty][b]
+        put_decision_result_no_a -> NETWORK_WORKING[PktEmpty][b]
     |
     when(b == DecisionYesFromServer)
-        put_decision_message_yes_b -> NETWORK_WORKING[a][PktEmpty]
+        put_decision_result_yes_b -> NETWORK_WORKING[a][PktEmpty]
     |
     when(b == DecisionNoFromServer)
-        put_decision_message_no_b -> NETWORK_WORKING[a][PktEmpty]
+        put_decision_result_no_b -> NETWORK_WORKING[a][PktEmpty]
     |
     when(a == AckFromUser)
         put_ack_message_a -> NETWORK_WORKING[PktEmpty][b]
@@ -242,14 +289,14 @@ user_a_send_yes_message/get_voting_message_yes_a,
 user_a_send_no_message/get_voting_message_no_a, 
 user_b_send_yes_message/get_voting_message_yes_b,
 user_b_send_no_message/get_voting_message_no_b,
-server_send_commit_to_a/get_decision_message_yes_a,
-server_send_abort_to_a/get_decision_message_no_a,
-server_send_commit_to_b/get_decision_message_yes_b,
-server_send_abort_to_b/get_decision_message_no_b,
-user_a_recv_decision_commit/put_decision_message_yes_a,
-user_a_recv_decision_abort/put_decision_message_no_a,
-user_b_recv_decision_commit/put_decision_message_yes_b,
-user_b_recv_decision_abort/put_decision_message_no_b,
+server_send_commit_to_a/get_decision_result_yes_a,
+server_send_abort_to_a/get_decision_result_no_a,
+server_send_commit_to_b/get_decision_result_yes_b,
+server_send_abort_to_b/get_decision_result_no_b,
+user_a_recv_decision_commit/put_decision_result_yes_a,
+user_a_recv_decision_abort/put_decision_result_no_a,
+user_b_recv_decision_commit/put_decision_result_yes_b,
+user_b_recv_decision_abort/put_decision_result_no_b,
 user_a_send_ack/get_ack_message_a,
 user_b_send_ack/get_ack_message_b,
 server_recv_ack_from_a/put_ack_message_a,
