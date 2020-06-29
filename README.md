@@ -47,3 +47,27 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 1. If all the users voting "Yes" on this commit, the server will eventually return "commit" decision result.
 
 2. If at least one user voting "No" on this commit, the server will eventually return "abort" decision result.
+
+
+## System Components
+
+### UserNode
+User node are involved in response voting message and response acknowledgement to decision results. In this model, we will start with 2 user nodes.
+
+1. Voting Message: The user node makes a decision to the new-received prepare commit message. Once decision has been made, the user node saves the decision result and send the decision message to the server.
+
+2. Ack to results: Once the user node receives the decision results message from the server, it would accept the "commit" or "abort" the decision. The user will send the acknowledge message back to the server.
+
+
+### Server
+Server node takes the responsibility to initialize the prepare commit process, sending it to each user node, waiting for user’s voting message and distribute the decision result to each users.
+
+1. Initializing commit process: The server node will create a new commit process and send it to all users and wait for their voting messages.
+
+2. Gathering voting messages and make decision: Once the server receive all responses from users, it will make the final decision. If all users say ”yes”, the final decision is ”commit”. If one user says ”no”, the final decision is ”abort”. 
+
+3. Gathering ACKs: The server sends the final decision to all users and waits for acknowledgements.
+
+
+### Network
+Network helps server and users communicate in a stable or unstable approach. The network gets packet to the server and sends it to all users. Similarly, the network gets packets from users and sends it to server.
