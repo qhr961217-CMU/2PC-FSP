@@ -33,6 +33,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 6. Both server and users might be failed and failure recovery mechanism should deal with commit process recovery. In the model, I assume that all completed actions would be recorded in log files atomically. Therefore, both server and users could be restored by their records in log files.
 
+
 ## *Safety* & *Liveness* Properties
 
 ### *Safety*
@@ -47,6 +48,12 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 4. If the server does not get all the `"ACKs"` from users, this commit process will never finish.
 
+5. If the server make the decision as `"commit"`, all of the users will never received the decision `"abort"`.
+
+6. If the server make the decision as `"abort"`, all of the users will never received the decision `"commit"`.
+
+7. If any packet loss happens in *PHASE 1* (prepare commit), the decision result will never be `"commit"`.
+
 
 
 ### *Liveness* 
@@ -59,7 +66,15 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 4. If the server has already get all the `"ACKs"` from users, this commit process will eventually finish.
 
-5. The commit process will eventually finish even when any packet loss occurs.
+5. If the server make the decision as `"commit"`, all of the users will eventually received the same decision `"commit"`.
+
+6. If the server make the decision as `"abort"`, all of the users will eventually received the same decision `"abort"`.
+
+7. If any packet loss happens in *PHASE 1* (prepare commit), the decision result will eventually be `"abort"`.
+
+8. The commit process will eventually finish even when any packet loss happens in *PHASE 1* (prepare commit).
+
+9.  The commit process will eventually finish even when any packet loss happens in *PHASE 2* (distribute decision).
 
 ## System Components
 
