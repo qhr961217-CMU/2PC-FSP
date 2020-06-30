@@ -33,25 +33,32 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 6. Both server and users might be failed and failure recovery mechanism should deal with commit process recovery. In the model, I assume that all completed actions would be recorded in log files atomically. Therefore, both server and users could be restored by their records in log files.
 
-## *Safety* & *liveness* Properties
+## *Safety* & *Liveness* Properties
 
 ### *Safety*
 
-1. If all the users voting "Yes" on this commit, the server will never return "abort" decision result.
+1. If all the users voting `"Yes"` on this commit, the server will never return `"abort"` decision result.
 
-2. If at least one user voting "No" on this commit, the server will never return "commit" decision result.
+2. If at least one user voting `"No"` on this commit, the server will never return `"commit"` decision result.
+
+3. If the server does not get response (include `"timeout"`) from any one of the users, the server will never make decision result.
+
+
 
 
 ### *Liveness* 
 
-1. If all the users voting "Yes" on this commit, the server will eventually return "commit" decision result.
+1. If all the users voting `"Yes"` on this commit, the server will eventually return `"commit"` decision result.
 
-2. If at least one user voting "No" on this commit, the server will eventually return "abort" decision result.
+2. If at least one user voting `"No"` on this commit, the server will eventually return `"abort"` decision result.
+
+3. If the server has already get all the response (include `"timeout"`) from all of the server, the server will eventually make decision result.
+
 
 
 ## System Components
 
-### UserNode
+### *UserNode*
 User node are involved in response voting message and response acknowledgement to decision results. In this model, we will start with 2 user nodes.
 
 1. Voting Message: The user node makes a decision to the new-received prepare commit message. Once decision has been made, the user node saves the decision result and send the decision message to the server.
@@ -59,7 +66,7 @@ User node are involved in response voting message and response acknowledgement t
 2. Ack to results: Once the user node receives the decision results message from the server, it would accept the "commit" or "abort" the decision. The user will send the acknowledge message back to the server.
 
 
-### Server
+### *Server*
 Server node takes the responsibility to initialize the prepare commit process, sending it to each user node, waiting for user’s voting message and distribute the decision result to each users.
 
 1. Initializing commit process: The server node will create a new commit process and send it to all users and wait for their voting messages.
@@ -69,5 +76,5 @@ Server node takes the responsibility to initialize the prepare commit process, s
 3. Gathering ACKs: The server sends the final decision to all users and waits for acknowledgements.
 
 
-### Network
+### *Network*
 Network helps server and users communicate in a stable or unstable approach. The network gets packet to the server and sends it to all users. Similarly, the network gets packets from users and sends it to server.
