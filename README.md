@@ -37,12 +37,15 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 ### *Safety*
 
+0. The system never deadlocks.
+   
 1. If all the users voting `"Yes"` on this commit, the server will never return `"abort"` decision result.
 
 2. If at least one user voting `"No"` on this commit, the server will never return `"commit"` decision result.
 
 3. If the server does not get response (include `"timeout"`) from any one of the users, the server will never make decision result.
 
+4. If the server does not get all the `"ACKs"` from users, this commit process will never finish.
 
 
 
@@ -54,7 +57,9 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 3. If the server has already get all the response (include `"timeout"`) from all of the server, the server will eventually make decision result.
 
+4. If the server has already get all the `"ACKs"` from users, this commit process will eventually finish.
 
+5. The commit process will eventually finish even when any packet loss occurs.
 
 ## System Components
 
