@@ -10,6 +10,9 @@ The Two-Phase Commit protocol can be described using state machines, known as La
 
 LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
+## Model Architecture
+![Two-Phase Commit](documentation/Two-Phase%20Commit%20Diagram.png)
+
 ## Model Assumptions
 
 1. In the two phase commit protocol, whenever the server start a new commit process, it will send requests for all the involved users. In real world, the involved users might be only a part of all potential users. In this model, I assume all users in models are involved users, which means once the server start a new commit, all users in our model will receive the requests.
