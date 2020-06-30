@@ -46,7 +46,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 3. If the server does not get response (include `"timeout"`) from any one of the users, the server will never make decision result.
 
-4. If the server does not get all the `"ACKs"` from users, this commit process will never finish.
+4. If the server does not get all the `"ACKs"` from users, this commit process will never `finish`.
 
 5. If the server make the decision as `"commit"`, all of the users will never received the decision `"abort"`.
 
@@ -64,7 +64,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 3. If the server has already get all the response (include `"timeout"`) from all of the server, the server will eventually make decision result.
 
-4. If the server has already get all the `"ACKs"` from users, this commit process will eventually finish.
+4. If the server has already get all the `"ACKs"` from users, this commit process will eventually `finish`.
 
 5. If the server make the decision as `"commit"`, all of the users will eventually received the same decision `"commit"`.
 
@@ -72,9 +72,9 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 7. If any packet loss happens in *PHASE 1* (prepare commit), the decision result will eventually be `"abort"`.
 
-8. The commit process will eventually finish even when any packet loss happens in *PHASE 1* (prepare commit).
+8. The commit process will eventually `finish` even when any packet loss happens in *PHASE 1* (prepare commit).
 
-9.  The commit process will eventually finish even when any packet loss happens in *PHASE 2* (distribute decision).
+9.  The commit process will eventually `finish` even when any packet loss happens in *PHASE 2* (distribute decision).
 
 ## System Components
 
