@@ -490,3 +490,146 @@ user_b_send_ack/get_ack_message_b,
 server_recv_ack_from_a/put_ack_message_a,
 server_recv_ack_from_b/put_ack_message_b
 }.
+
+//=============================
+// Properties
+//=============================
+
+const False = 0
+const True = 1
+
+fluent SERVER_COMMIT = <
+    {server_commit
+    // server_send_commit_to_a,
+    // server_send_commit_to_b,
+    // user_a_recv_decision_commit,
+    // user_b_recv_decision_commit
+    }, 
+    {server_abort,
+    // server_recv_voting_no_from_b, 
+    // server_recv_voting_no_from_a, 
+    // server_commit_message_a_timeout, 
+    // server_commit_message_b_timeout,
+    // user_a_decide_no,
+    // user_a_send_no_message,
+    // user_b_decide_no,
+    // user_b_send_no_message,
+    // server_send_abort_to_a,
+    // server_send_abort_to_b,
+    // user_a_recv_decision_abort,
+    // user_b_recv_decision_abort
+    server_create_commit
+    }> 
+    initially False
+
+fluent SERVER_ABORT = <
+    {server_abort
+    // server_recv_voting_no_from_b, 
+    // server_recv_voting_no_from_a, 
+    // server_commit_message_a_timeout, 
+    // server_commit_message_b_timeout,
+    // user_a_decide_no,
+    // user_a_send_no_message,
+    // user_b_decide_no,
+    // user_b_send_no_message,
+    // server_send_abort_to_a,
+    // server_send_abort_to_b,
+    // user_a_recv_decision_abort,
+    // user_b_recv_decision_abort
+    }, 
+    {server_commit,
+    // server_send_commit_to_a,
+    // server_send_commit_to_b,
+    // user_a_recv_decision_commit,
+    // user_b_recv_decision_commit
+    server_create_commit
+    }> 
+    initially False
+
+fluent USER_A_VOTING_YES = <
+    {user_a_decide_yes
+    // user_a_send_yes_message,
+    // server_recv_voting_yes_from_a
+    },
+    {user_a_decide_no,
+    // user_a_send_no_message,
+    // server_recv_voting_no_from_a
+    server_create_commit
+    }> 
+    initially False
+
+fluent USER_A_VOTING_NO = <
+    {user_a_decide_no
+    // user_a_send_no_message,
+    // server_recv_voting_no_from_a
+    },
+    {user_a_decide_yes,
+    // user_a_send_yes_message,
+    // server_recv_voting_yes_from_a
+    server_create_commit
+    }> 
+    initially False
+
+fluent USER_B_VOTING_YES = <
+    {user_b_decide_yes
+    // user_b_send_yes_message,
+    // server_recv_voting_yes_from_b
+    },
+    {user_b_decide_no,
+    // user_b_send_no_message,
+    // server_recv_voting_no_from_b
+    server_create_commit
+    }> 
+    initially False
+
+fluent USER_B_VOTING_NO = <
+    {user_b_decide_no
+    // user_b_send_no_message,
+    // server_recv_voting_no_from_b
+    },
+    {user_b_decide_yes,
+    // user_b_send_yes_message,
+    // server_recv_voting_yes_from_b
+    server_create_commit
+    }> 
+    initially False
+
+fluent PACKET_LOST_PHASE_ONE = <
+    {server_commit_message_a_timeout, 
+    server_commit_message_b_timeout}, 
+    {server_commit, 
+    server_create_commit}> 
+    initially False
+
+
+//=============================
+// Safety
+//=============================
+
+// 1. If all the users voting "Yes" on this commit, 
+// the server will never return "abort" decision result.
+assert SERVER_NEVER_ABORT = [](
+    (USER_A_VOTING_YES && USER_B_VOTING_YES && !PACKET_LOST_PHASE_ONE)
+    -> !SERVER_ABORT)
+
+// 2. If at least one user voting "No" on this commit, 
+// the server will never return "commit" decision result.
+assert SERVER_NEVER_COMMIT = [](
+    (USER_A_VOTING_NO || USER_B_VOTING_NO) 
+    -> !SERVER_COMMIT)
+
+//=============================
+// Liveness
+//=============================
+
+// 1. If all the users voting "Yes" on this commit, 
+// the server will eventually return "commit" decision result.
+assert SERVER_EVENTUALLY_COMMIT = (
+    (USER_A_VOTING_YES && USER_B_VOTING_YES && !PACKET_LOST_PHASE_ONE)
+    -> <>SERVER_COMMIT)
+
+// 2. If at least one user voting "No" on this commit, 
+// the server will eventually return "abort" decision result.
+assert SERVER_EVENTUALLY_ABORT = (
+    (USER_A_VOTING_NO || USER_B_VOTING_NO)
+    -> <>SERVER_ABORT)
