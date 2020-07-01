@@ -65,7 +65,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 2. If at least one user voting `"No"` on this commit, the server will eventually return `"abort"` decision result.
 
-3. If the server has already get all the response (include `"timeout"`) from all of the server, the server will eventually make decision result.
+3. If the server has already get all the response (include `"timeout"`) from all of the users, the server will eventually make decision result.
 
 4. If the server has already get all the `"ACKs"` from users, this commit process will eventually `finish`.
 
