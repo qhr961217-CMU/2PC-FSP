@@ -43,7 +43,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 0. The system never deadlocks.
    
-1. If all the users voting `"Yes"` on this commit, the server will never return `"abort"` decision result.
+1. If all the users voting `"Yes"` on this commit without packet loss in *PHASE 1*, the server will never return `"abort"` decision result.
 
 2. If at least one user voting `"No"` on this commit, the server will never return `"commit"` decision result.
 
@@ -61,7 +61,7 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 ### *Liveness* 
 
-1. If all the users voting `"Yes"` on this commit, the server will eventually return `"commit"` decision result.
+1. If all the users voting `"Yes"` on this commit without packet loss in *PHASE 1*, the server will eventually return `"commit"` decision result.
 
 2. If at least one user voting `"No"` on this commit, the server will eventually return `"abort"` decision result.
 
