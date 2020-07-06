@@ -491,12 +491,18 @@ server_recv_ack_from_a/put_ack_message_a,
 server_recv_ack_from_b/put_ack_message_b
 }.
 
+
+
 //=============================
 // Properties
 //=============================
 
 const False = 0
 const True = 1
+
+//=============================
+// SERVER 
+//=============================
 
 fluent SERVER_COMMIT = <
     {
@@ -518,6 +524,34 @@ fluent SERVER_ABORT = <
     }> 
     initially False
 
+fluent SERVER_COMMIT_FINISH = < 
+    {
+        server_back_to_init_state
+    },
+    {
+        server_create_commit
+    }>
+    initially False
+
+//=============================
+// NETWORK
+//=============================
+
+fluent PACKET_LOST_PHASE_ONE = <
+    {
+        server_commit_message_a_timeout, 
+        server_commit_message_b_timeout
+    }, 
+    {   
+        server_commit, 
+        server_create_commit
+    }> 
+    initially False
+
+//=============================
+// USER_A
+//=============================
+
 fluent USER_A_VOTING_YES = <
     {
         user_a_decide_yes
@@ -537,6 +571,51 @@ fluent USER_A_VOTING_NO = <
         server_create_commit
     }> 
     initially False
+
+fluent USER_A_RESPONSE = <
+    {
+        server_recv_voting_yes_from_a,
+        server_recv_voting_no_from_a,
+        server_commit_message_a_timeout
+    },
+    {
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_A_ACK = <
+    {
+        server_recv_ack_from_a
+    },
+    {
+        server_decision_result_a_timeout,
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_A_RECEIVE_DECISION_COMMIT = <
+    {
+        user_a_recv_decision_commit
+    },
+    {
+        user_a_recv_decision_abort,
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_A_RECEIVE_DECISION_ABORT = <
+    {
+        user_a_recv_decision_abort
+    },
+    {
+        user_a_recv_decision_commit,
+        server_create_commit
+    }>
+    initially False
+
+//=============================
+// USER_B
+//=============================
 
 fluent USER_B_VOTING_YES = <
     {
@@ -558,28 +637,6 @@ fluent USER_B_VOTING_NO = <
     }> 
     initially False
 
-fluent PACKET_LOST_PHASE_ONE = <
-    {
-        server_commit_message_a_timeout, 
-        server_commit_message_b_timeout
-    }, 
-    {   
-        server_commit, 
-        server_create_commit
-    }> 
-    initially False
-
-fluent USER_A_RESPONSE = <
-    {
-        server_recv_voting_yes_from_a,
-        server_recv_voting_no_from_a,
-        server_commit_message_a_timeout
-    },
-    {
-        server_create_commit
-    }>
-    initially False
-
 fluent USER_B_RESPONSE = <
     {
         server_recv_voting_yes_from_b,
@@ -587,16 +644,6 @@ fluent USER_B_RESPONSE = <
         server_commit_message_b_timeout
     },
     {
-        server_create_commit
-    }>
-    initially False
-
-fluent USER_A_ACK = <
-    {
-        server_recv_ack_from_a
-    },
-    {
-        server_decision_result_a_timeout,
         server_create_commit
     }>
     initially False
@@ -611,11 +658,22 @@ fluent USER_B_ACK = <
     }>
     initially False
 
-fluent SERVER_COMMIT_FINISH = < 
+fluent USER_B_RECEIVE_DECISION_COMMIT = <
     {
-        server_back_to_init_state
+        user_b_recv_decision_commit
     },
     {
+        user_b_recv_decision_abort,
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_B_RECEIVE_DECISION_ABORT = <
+    {
+        user_b_recv_decision_abort
+    },
+    {
+        user_b_recv_decision_commit,
         server_create_commit
     }>
     initially False
@@ -651,6 +709,28 @@ assert SERVER_NEVER_FINISH_COMMIT = [](
     !(USER_A_ACK && USER_B_ACK) -> !SERVER_COMMIT_FINISH
     )
 
+// 5. If the server make the decision as "commit", 
+// all of the users will never received the decision "abort".
+
+assert USER_NEVER_RECEIVE_ABORT = [](
+    SERVER_COMMIT 
+    -> !(USER_A_RECEIVE_DECISION_ABORT || USER_B_RECEIVE_DECISION_ABORT)
+    )
+
+// 6. If the server make the decision as "abort", 
+// all of the users will never received the decision "commit".
+
+assert USER_NEVER_RECEIVE_COMMIT = [](
+    SERVER_ABORT 
+    -> !(USER_A_RECEIVE_DECISION_COMMIT || USER_B_RECEIVE_DECISION_COMMIT)
+    )
+
+// 7. If any packet loss happens in PHASE 1 (prepare commit), 
+// the decision result will never be "commit".
+
+assert DECISION_NEVER_COMMIT_WHEN_TIMEOUT_PHASE_ONE = [](
+    PACKET_LOST_PHASE_ONE -> !SERVER_COMMIT
+    )
 
 //=============================
 // Liveness 
