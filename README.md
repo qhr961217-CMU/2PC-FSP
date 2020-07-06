@@ -58,7 +58,6 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 7. If any packet loss happens in *PHASE 1* (prepare commit), the decision result will never be `"commit"`.
 
 
-
 ### *Liveness* 
 
 1. If all the users voting `"Yes"` on this commit without packet loss in *PHASE 1*, the server will eventually return `"commit"` decision result.
