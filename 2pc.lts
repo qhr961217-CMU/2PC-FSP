@@ -569,10 +569,63 @@ fluent PACKET_LOST_PHASE_ONE = <
     }> 
     initially False
 
+fluent USER_A_RESPONSE = <
+    {
+        server_recv_voting_yes_from_a,
+        server_recv_voting_no_from_a,
+        server_commit_message_a_timeout
+    },
+    {
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_B_RESPONSE = <
+    {
+        server_recv_voting_yes_from_b,
+        server_recv_voting_no_from_b,
+        server_commit_message_b_timeout
+    },
+    {
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_A_ACK = <
+    {
+        server_recv_ack_from_a
+    },
+    {
+        server_decision_result_a_timeout,
+        server_create_commit
+    }>
+    initially False
+
+fluent USER_B_ACK = <
+    {
+        server_recv_ack_from_b
+    },
+    {
+        server_decision_result_b_timeout,
+        server_create_commit
+    }>
+    initially False
+
+fluent SERVER_COMMIT_FINISH = < 
+    {
+        server_back_to_init_state
+    },
+    {
+        server_create_commit
+    }>
+    initially False
 
 //=============================
 // Safety
 //=============================
+
+// 0. The system will never deadlock.
+// This can be easily checked by LTSA tool.
 
 // 1. If all the users voting "Yes" on this commit without packet loss in PHASE 1, 
 // the server will never return "abort" decision result.
@@ -585,6 +638,18 @@ assert SERVER_NEVER_ABORT = [](
 assert SERVER_NEVER_COMMIT = [](
     (USER_A_VOTING_NO || USER_B_VOTING_NO) 
     -> !SERVER_COMMIT)
+
+// 3. If the server does not get response (include "timeout") from any one of the users,
+// the server will never make decision result.
+assert SERVER_NEVER_MAKE_DECISION = [](
+    (!USER_A_RESPONSE || !USER_B_RESPONSE) 
+    -> !(SERVER_COMMIT || SERVER_ABORT))
+
+// 4. If the server does not get all the "ACKs" from users, 
+// this commit process will never finish.
+assert SERVER_NEVER_FINISH_COMMIT = [](
+    !(USER_A_ACK && USER_B_ACK) -> !SERVER_COMMIT_FINISH
+    )
 
 
 //=============================
@@ -604,7 +669,5 @@ assert SERVER_EVENTUALLY_ABORT = (
     -> <>SERVER_ABORT)
  
 
-// assert SERVER_EVENTUALLY_COMMIT_ANOTHER_ONE = [](
-//     (USER_A_VOTING_YES && USER_B_VOTING_YES)
-//     -> <>SERVER_COMMIT)
+
     
