@@ -701,7 +701,8 @@ assert SERVER_NEVER_COMMIT = [](
 // the server will never make decision result.
 assert SERVER_NEVER_MAKE_DECISION = [](
     (!USER_A_RESPONSE || !USER_B_RESPONSE) 
-    -> !(SERVER_COMMIT || SERVER_ABORT))
+    -> !(SERVER_COMMIT || SERVER_ABORT)
+    )
 
 // 4. If the server does not get all the "ACKs" from users, 
 // this commit process will never finish.
@@ -748,6 +749,33 @@ assert SERVER_EVENTUALLY_ABORT = (
     (USER_A_VOTING_NO || USER_B_VOTING_NO)
     -> <>SERVER_ABORT)
  
+// 3. If the server has already get all the response (include "timeout") from all of the users, 
+// the server will eventually make decision result.
 
+assert SERVER_EVENTUALLY_RESPONSE = (
+    (USER_A_RESPONSE && USER_B_RESPONSE) 
+    -> <>(SERVER_COMMIT || SERVER_ABORT)
+    ) 
 
-    
+// 4. If the server has already get all the "ACKs" from users, this 
+// commit process will eventually finish.
+
+assert SERVER_EVENTUALLY_FINISH_COMMIT = (
+    (USER_A_ACK && USER_B_ACK) -> <>SERVER_COMMIT_FINISH
+    )
+
+// 5. If the server make the decision as "commit", 
+// all of the users will eventually received the same decision "commit".
+
+assert USER_EVENTUALLY_RECEIVE_COMMIT = (
+    SERVER_COMMIT 
+    -> <>(USER_A_RECEIVE_DECISION_COMMIT && USER_B_RECEIVE_DECISION_COMMIT)
+    )
+
+// 6. If the server make the decision as "abort", all of the users will 
+// eventually received the same decision "abort".
+
+assert USER_EVENTUALLY_RECEIVE_ABORT = (
+    SERVER_ABORT
+    -> <>(USER_A_RECEIVE_DECISION_ABORT && USER_B_RECEIVE_DECISION_ABORT)
+    )
