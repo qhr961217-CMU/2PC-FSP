@@ -814,3 +814,11 @@ assert COMMIT_PROCESS_EVENTUALLY_FINISH_WHEN_TIMEOUT_PHASE_TWO = (
     PACKET_LOST_PHASE_TWO
     -> <>SERVER_COMMIT_FINISH
     )
+
+// 10. The commit process will eventually finish even when 
+// any packet loss happens at any time.
+
+assert COMMIT_PROCESS_EVENTUALLY_FINISH_WHEN_TIMEOUT_HAPPENS = (
+    (PACKET_LOST_PHASE_ONE || PACKET_LOST_PHASE_TWO)
+    ->  <>SERVER_COMMIT_FINISH
+    )

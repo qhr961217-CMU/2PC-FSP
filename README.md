@@ -78,6 +78,9 @@ LTSA download: https://www.doc.ic.ac.uk/ltsa/
 
 9.  The commit process will eventually `finish` even when any packet loss happens in *PHASE 2* (distribute decision).
 
+10. The commit process will eventually `finish` even when any packet loss happens at any time.
+
+
 ## System Components
 
 ### *UserNode*
