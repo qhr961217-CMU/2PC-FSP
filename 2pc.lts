@@ -548,6 +548,17 @@ fluent PACKET_LOST_PHASE_ONE = <
     }> 
     initially False
 
+fluent PACKET_LOST_PHASE_TWO = <
+    {
+        server_decision_result_a_timeout,
+        server_decision_result_b_timeout 
+    },
+    {
+        server_create_commit
+    }>
+    initially False
+
+
 //=============================
 // USER_A
 //=============================
@@ -778,4 +789,28 @@ assert USER_EVENTUALLY_RECEIVE_COMMIT = (
 assert USER_EVENTUALLY_RECEIVE_ABORT = (
     SERVER_ABORT
     -> <>(USER_A_RECEIVE_DECISION_ABORT && USER_B_RECEIVE_DECISION_ABORT)
+    )
+
+// 7. If any packet loss happens in PHASE 1 (prepare commit), 
+// the decision result will eventually be "abort".
+
+assert DECISION_EVENTUALLY_ABORT_WHEN_TIMEOUT_PHASE_ONE = (
+    PACKET_LOST_PHASE_ONE 
+    -> <>SERVER_ABORT
+    )
+
+// 8. The commit process will eventually finish even when 
+// any packet loss happens in PHASE 1 (prepare commit).
+
+assert COMMIT_PROCESS_EVENTUALLY_FINISH_WHEN_TIMEOUT_PHASE_ONE = (
+    PACKET_LOST_PHASE_ONE 
+    -> <>SERVER_COMMIT_FINISH
+    )
+
+// 9. The commit process will eventually finish even when 
+// any packet loss happens in PHASE 2 (distribute decision).
+
+assert COMMIT_PROCESS_EVENTUALLY_FINISH_WHEN_TIMEOUT_PHASE_TWO = (
+    PACKET_LOST_PHASE_TWO
+    -> <>SERVER_COMMIT_FINISH
     )
